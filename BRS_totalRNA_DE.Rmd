@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Reads in total RNA reads count data
 ```{r,message=FALSE,warning=FALSE}
 library(DESeq2)
-rna <- read.csv("phase1234_totalRNA_reads_count_ready.csv",header=T,row.names=1)
+rna <- read.csv("totalRNA_reads_count_ready.csv",header=T,row.names=1)
 ```
 
 # Read in sample table
@@ -68,7 +68,7 @@ sample2 <- read.csv("paired_totalRNA_sample_table.csv",header=T,row.names=1)
 sample2 <- sample2[order(rownames(sample2)),]
 rna2 <- rna[,colnames(rna) %in% rownames(sample2)]
 colnames(rna2) == rownames(sample2)
-dds2 <- DESeqDataSetFromMatrix(countData = rna2,colData = sample2,design = ~ TSS.Subject.ID + Specimen.Type.ID +driver_group.1)
+dds2 <- DESeqDataSetFromMatrix(countData = rna2,colData = sample2,design = ~ TSS.Subject.ID + Specimen.Type.ID + driver_group.1)
 keep2 <- rowSums(counts(dds2)) >= 10
 dds2 <- dds2[keep2,]
 dds2 <- DESeq(dds2,minReplicatesForReplace=Inf)
