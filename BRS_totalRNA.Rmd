@@ -20,7 +20,7 @@ load("totalRNA_BRS_DE.Rdata")
 rownames(res_fc2q0.01[1:min(nrow(res_fc2q0.01),100),])
 ```
 
-# Get the centroid of BRAF M and RAS M data
+# Get the centroid of BRAFV600E M and RAS M data
 ```{r,message=FALSE,warning=FALSE}
 CB <- matrix(rowMeans(top100_vst_braf),ncol=1, byrow=T)
 colnames(CB) <- c("centroid")
