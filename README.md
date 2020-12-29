@@ -9,6 +9,7 @@ Here are the Rmarkdown files for generating the the BRAFV600E-RAS score (BRS),th
 5) BRS_miRNA.Rmd: Estimating the degree to which the miRNA expression profiles resemble either BRAFV600Eor RAS-mutated PTC with the BRAFV600E – RAS score 
 6) BRS_meth.Rmd: Estimating the degree to which the methylation profiles resemble either BRAFV600Eor RAS-mutated PTC with the BRAFV600E – RAS score 
 7) TDS.Rmd: Generating the thyroid differentiation score (TDS), based on expression of 16 thyroid metabolism andfunction genes
+8) ERK.Rmd: Generating the ERK-activity score of 52 expressed genes responsive to MEK inhibition
 ### III. Required R packages
 1) DESeq2
 2) ggplot2
