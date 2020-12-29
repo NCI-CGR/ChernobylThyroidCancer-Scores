@@ -43,7 +43,7 @@ TR <- sapply(TR, function(i){i[1,2]})
 TR <- (TR-mean(TR))/sd(TR)
 ```
 
-# Generate BRAFV600E – RAS score
+# Generate BRAFV600E – RAS score according to the method described in the TCGA analysis
 
 Briefly, we computed the centroids of the top Mut.BRAFV600E vs Mut.RAS DE miRNA signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
 BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
