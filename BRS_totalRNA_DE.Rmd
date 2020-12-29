@@ -94,14 +94,14 @@ top100_vst_ras <- top100_vst_tu[,colnames(top100_vst_tu)%in%rownames(sample_rasM
 
 ```
 
-# PCA plots
+# PCA plots of all samples
 
 The PCA plot shows the samples in the 2D plane spanned by their first two principal components. This type of plot is useful for visualizing the overall effect of experimental covariates and batch effects.
 ```{r,message=FALSE,warning=FALSE}
 library(ggplot2)
 library(pheatmap)
 library("vsn")
-plotPCA(vst, intgroup=c("Specimen.Type.ID","FinalDriverPathway.10Jan2020")) + ggtitle("totalRNA driver PCA, all counts")
+plotPCA(vst, intgroup=c("Specimen.Type.ID","FinalDriverPathway.10Jan2020")) + ggtitle("totalRNA PCA, all samples")
 library(plotly)
 plot_ly(plotPCA(vst, intgroup=c("Specimen.Type.ID","FinalDriverPathway.10Jan2020"),returnData=T),x= ~ PC1, y =  ~ PC2, text= ~ name,color = ~ FinalDriverPathway.10Jan2020)
 
@@ -136,7 +136,7 @@ plotMA(res)
 ```
 ## PCA plot, shows the samples in the 2D plane spanned by their first two principal components. This type of plot is useful for visualizing the overall effect of experimental covariates and batch effects.
 ```{r, message=FALSE,warning=FALSE}
-plotPCA(vst2, intgroup=c("Specimen.Type.ID","driver_group.1")) + ggtitle("paired_sample_totalRNA_driver_PCA, all counts")
+plotPCA(vst2, intgroup=c("Specimen.Type.ID","driver_group.1")) + ggtitle("totalRNA PCA, tumor normal paired samples")
 
 plot_ly(plotPCA(vst2, intgroup=c("Specimen.Type.ID","driver_group.1"),returnData=T),x= ~ PC1, y =  ~ PC2, text= ~ name, color = ~ driver_group.1)
 ```
