@@ -1,0 +1,149 @@
+---
+title: "Detection of differentially expressed miRNAs between BRAFV600E and RAS samples (tumor-normal paired samples only) using DESeq2"
+author: "Jieqiong Dai"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+      html_document:
+        code_folding: hide
+        toc: true
+        toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reads in microRNA reads count data
+```{r,message=FALSE,warning=FALSE}
+library(DESeq2)
+rna <- read.csv("phase1234_miRNA_reads_count_ready.csv",header=T,row.names=1)
+```
+
+# Read in sample table
+```{r,message=FALSE,warning=FALSE}
+sample <- read.csv("miRNA_sample_table.csv",header=T,row.names=1)
+```
+
+# Match reads count and sample tables
+```{r,message=FALSE,warning=FALSE,results='hide'}
+sample <- sample[order(rownames(sample)),]
+rna <- rna[,colnames(rna) %in% rownames(sample)]
+rna <- rna[,order(colnames(rna))]
+colnames(rna) == rownames(sample)
+```
+
+# Select BRAFV600E mutaion samples
+```{r,message=FALSE,warning=FALSE}
+sample_brafM <- sample[sample $ BRAF.RAS_Score_Driver.10Jan2020=="BRAF.MutV600E",]
+```
+
+# Select RAS mutation samples
+```{r,message=FALSE,warning=FALSE}
+sample_rasM <- sample[sample $ BRAF.RAS_Score_Driver.10Jan2020=="Mut.RAS",]
+```
+
+# Combine BRAFV600E M and RAS M samples
+```{r,message=FALSE,warning=FALSE}
+sample_brafM_rasM <- rbind(sample_brafM,sample_rasM)
+sample_brafM_rasM <- sample_brafM_rasM[order(rownames(sample_brafM_rasM)),]
+```
+
+# Get vst data of all samples
+```{r,message=FALSE,warning=FALSE}
+dds <- DESeqDataSetFromMatrix(countData = rna,colData = sample,design = ~ Phase + Sex + probality + FinalDriverPathway.10Jan2020)
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep,]
+dds <- DESeq(dds,minReplicatesForReplace=Inf)
+vst <- vst(dds,blind = F,nsub=300)
+write.csv(assay(vst),"miRNA_vst.csv")
+```
+
+# Detect BRAFV600E M vs RAS M DE miRNAs using tumor-normal paired samples
+```{r,message=FALSE,warning=FALSE}
+sample2 <- read.csv("paired_miRNA_sample_table.csv",header=T,row.names=1)
+sample2 <- sample2[order(rownames(sample2)),]
+rna2 <- rna[,colnames(rna) %in% rownames(sample2)]
+colnames(rna2) == rownames(sample2)
+dds2 <- DESeqDataSetFromMatrix(countData = rna2,colData = sample2,design = ~ TSS.Subject.ID + Specimen.Type.ID +driver_group.1)
+keep2 <- rowSums(counts(dds2)) >= 10
+dds2 <- dds2[keep2,]
+dds2 <- DESeq(dds2,minReplicatesForReplace=Inf)
+res <- results(dds2,contrast = c("driver_group.1","BRAF.MutV600E","Mut.RAS"))
+summary(res)
+res <- res[order(res $ padj,-abs(res $ log2FoldChange)),]
+res_fc1.5q0.05 <- subset(res,(log2FoldChange>=0.5849625|log2FoldChange<=-0.5849625)&padj<=0.05)
+nrow(res_fc1.5q0.05)
+write.csv(res_fc1.5q0.05,"miRNA_BRAFmutationVSRASmutation_fc1.5q0.05.csv")
+
+```
+
+# Get vst data of top BRAFV600E M vs RAS M DE miRNAs (fold change >=1.5, p-adjust <=0.05) in tumor samples
+```{r,message=FALSE,warning=FALSE,results='hide'}
+sample_tu <- subset(sample,Specimen.Type.ID == "Primary Tumor")
+vst_tu <- vst[,colnames(vst)%in%rownames(sample_tu)]
+top100_vst_tu <- assay(vst)[rownames(vst)%in%rownames(res_fc1.5q0.05[1:min(nrow(res_fc1.5q0.05),100),]),colnames(vst)%in%rownames(sample_tu)]
+write.csv(top100_vst_tu,"miRNA_top_BRAFvsRAS_vst_inTumor.csv")
+
+top100_vst_braf <- top100_vst_tu[,colnames(top100_vst_tu)%in%rownames(sample_brafM)]
+
+top100_vst_ras <- top100_vst_tu[,colnames(top100_vst_tu)%in%rownames(sample_rasM)]
+
+```
+
+# PCA plots of all samples
+
+The PCA plot shows the samples in the 2D plane spanned by their first two principal components. This type of plot is useful for visualizing the overall effect of experimental covariates and batch effects.
+```{r,message=FALSE,warning=FALSE}
+library(ggplot2)
+library(pheatmap)
+library("vsn")
+plotPCA(vst, intgroup=c("Specimen.Type.ID","FinalDriverPathway.10Jan2020")) + ggtitle("miRNA PCA, all samples")
+library(plotly)
+plot_ly(plotPCA(vst, intgroup=c("Specimen.Type.ID","FinalDriverPathway.10Jan2020"),returnData=T),x= ~ PC1, y =  ~ PC2, text= ~ name, color = ~ FinalDriverPathway.10Jan2020)
+```
+
+# Heamap of vst data of the top BRAFV600E M vs RAS M DE miRNAs in tumor samples
+```{r,message=FALSE,warning=FALSE}
+df <- as.data.frame(sample_tu $ FinalDriverPathway.10Jan2020)
+rownames(df) <- rownames(sample_tu)
+colnames(df) <- c("driver")
+pheatmap(top100_vst_tu,cluster_rows=T,show_rownames=F,show_colnames=F,cluster_cols=T,treeheight_row = 0, treeheight_col = 0,annotation_col=df)
+df2 <- as.data.frame(sample_brafM_rasM $ FinalDriverPathway.10Jan2020)
+rownames(df2) <- rownames(sample_brafM_rasM)
+colnames(df2) <- c("driver")
+top100_vst_tu3 <- top100_vst_tu[,colnames(top100_vst_tu)%in%rownames(sample_brafM_rasM)]
+pheatmap(top100_vst_tu,cluster_rows=T,show_rownames=F,show_colnames=F,cluster_cols=T, treeheight_row = 0,treeheight_col = 0,annotation_col=df2)
+pheatmap(top100_vst_tu3,cluster_rows=T,show_rownames=F,show_colnames=F,cluster_cols=T, treeheight_row = 0,treeheight_col = 0,annotation_col=df2)
+
+```
+
+# QC plots of the DE analysis using tunor-nomal paird samples
+
+## Mean SD plot, plots standard deviation of the transformed data, across samples, against the mean, using the variance stabilizing transformation. The vertical axis in such plots is the square root of the variance over all samples, so including the variance due to the experimental conditions. While a flat curve of the square root of variance over the mean may seem like the goal of such transformations, this may be unreasonable in the case of datasets with many true differences due to the experimental conditions.
+```{r, message=FALSE,warning=FALSE}
+library("RColorBrewer")
+vst2 <- vst(dds2, blind=F,nsub=300)
+meanSdPlot(assay(vst2))
+```
+## MA plot, shows the log2 fold changes attributable to a given variable over the mean of normalized counts for all the samples. Points will be colored red if the adjusted p value is less than 0.1. Points which fall out of the window are plotted as open triangles pointing either up or down.
+```{r, message=FALSE,warning=FALSE}
+plotMA(res)
+```
+## PCA plot, shows the samples in the 2D plane spanned by their first two principal components. This type of plot is useful for visualizing the overall effect of experimental covariates and batch effects.
+```{r, message=FALSE,warning=FALSE}
+plotPCA(vst2, intgroup=c("Specimen.Type.ID","driver_group.1")) + ggtitle("miRNA PCA, tumor normal paired samples")
+
+plot_ly(plotPCA(vst2, intgroup=c("Specimen.Type.ID","driver_group.1"),returnData=T),x= ~ PC1, y =  ~ PC2, text= ~ name, color = ~ driver_group.1)
+```
+## Box plot of the Cook’s distances, is an approach to count outliers by checking if one sample is consistently higher than others. For every gene and for every sample, a diagnostic test for outliers called Cook’s distance. Cook’s distance is a measure of how much a single sample is influencing the fitted coefficients for a gene, and a large value of Cook’s distance is intended to indicate an outlier count.
+Note: in large sample set, sample names may not be properly labeled.
+```{r, message=FALSE,warning=FALSE}
+par(mar = c(8, 5, 2, 2))
+boxplot(log10(assays(dds2)[["cooks"]]), range = 0, las = 2)
+```
+## Dispersion, plot, with the final estimates shrunk from the gene-wise estimates towards the fitted estimates. Some gene-wise estimates are flagged as outliers and not shrunk towards the fitted value.The amount of shrinkage depends on the sample size, the number of coefficients, the row mean and the variability of the gene-wise estimates.
+```{r, message=FALSE,warning=FALSE}
+plotDispEsts(dds2)
+
+save.image("miRNA_BRS_DE.Rdata")
+```
