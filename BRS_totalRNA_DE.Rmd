@@ -145,19 +145,6 @@ Note: in large sample set, sample names may not be properly labeled.
 ```{r, message=FALSE,warning=FALSE}
 par(mar = c(8, 5, 2, 2))
 boxplot(log10(assays(dds2)[["cooks"]]), range = 0, las = 2)
-```
-# Dispersion plot, with the final estimates shrunk from the gene-wise estimates towards the fitted estimates. Some gene-wise estimates are flagged as outliers and not shrunk towards the fitted value.The amount of shrinkage depends on the sample size, the number of coefficients, the row mean and the variability of the gene-wise estimates.
-```{r, message=FALSE,warning=FALSE}
-plotDispEsts(dds2)
-```
-# Heatmap of sample to sample distance, an overview over similarities and dissimilarities between samples using transformed count matrix of all samples.
-```{r, message=FALSE,warning=FALSE}
-sampleDists <- dist(t(assay(vst2)))
-sampleDistMatrix <- as.matrix(sampleDists)
-rownames(sampleDistMatrix) <- paste(vst2 $ Specimen.Type.ID, vst2 $ TSS.Subject.ID, sep = "-")
-colnames(sampleDistMatrix) <- NULL
-colors <- colorRampPalette(rev(brewer.pal(9, "Blues")))(255)
-pheatmap(sampleDistMatrix, clustering_distance_rows = sampleDists, clustering_distance_cols = sampleDists, col = colors)
 
 save.image("totalRNA_BRS_DE.Rdata")
 ```
