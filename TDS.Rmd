@@ -1,0 +1,48 @@
+---
+title: "Generating the thyroid differentiation score (TDS), based on expression of 16 thyroid metabolism andfunction genes"
+author: "Jieqiong Dai"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+      html_document:
+        code_folding: hide
+        toc: true
+        toc_float: true
+        pandoc_args: [
+         "+RTS", "-k16g",
+         "-RTS"
+         ]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read in vst expression data of all samples
+```{r,message=FALSE,warning=FALSE}
+vst <- read.csv("totalRNA_vst.csv",header=T,row.names=1)
+library(rmarkdown)
+paged_table(vst)
+```
+# Read in sample table and select tumor samples
+```{r,message=FALSE,warning=FALSE}
+sample <- read.csv("totalRNA_sample_table.csv",header=T,row.names=1)
+sample_tu <- subset(sample,Specimen.Type.ID == "Primary Tumor")
+paged_table(sample_tu)
+vst_tu <- vst[,colnames(vst)%in%rownames(sample_tu)]
+```
+
+# Compute the thyroid differentiation score according to the method described in the TCGA analysis
+
+TDS was defined as the mean of log2(fold change) across the vst expression of 16 thyroid metabolism andfunction genes. 
+```{r,message=FALSE,warning=FALSE}
+gene_tds <- c("TG","TPO","SLC26A4","SLC5A5","SLC5A8","DIO1","DIO2","DUOX1","DUOX2","FOXE1","GLIS3","PAX8","NKX2-1","TSHR","THRA","THRB")
+vst_tu_tds <- vst_tu[rownames(vst_tu)%in%gene_tds,]
+fold_change <- t(apply(vst_tu_tds,1,function(x) x-median(x,na.rm=T)))
+TDS <- as.data.frame(colMeans(fold_change,na.rm=T) )
+TDS <- TDS[order(rownames(TDS)),,drop=F]
+sample_tu <- sample_tu[order(rownames(sample_tu)),]
+TDS <- cbind(TDS,sample_tu[,c("FinalDriverPathway.10Jan2020","FinalDriverGroup.10Jan2020","FinalDriver.10Jan2020","TSS.Subject.ID","Dose.MGY","Age_exposure","Age_S")])
+names(TDS)[1] <- "TDS"
+write.csv(TDS,"tumor_TDS.csv")
+paged_table(TDS)
+```
