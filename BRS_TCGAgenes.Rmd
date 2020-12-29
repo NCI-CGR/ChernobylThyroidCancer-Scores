@@ -1,0 +1,101 @@
+---
+title: "Estimating the degree to which the gene expression profiles resemble either BRAFV600Eor RAS-mutated PTC with the BRAFV600E – RAS score, using differentially expressed genes between BRAFV600E and RAS samples used in the TCGA analysis"
+author: "Jieqiong Dai"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+      html_document:
+        code_folding: hide
+        toc: true
+        toc_float: true
+        pandoc_args: [
+         "+RTS", "-k16g",
+         "-RTS"
+         ]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read in vst expression data for all samples  
+```{r,message=FALSE,warning=FALSE}
+vst <- read.csv("totalRNA_vst.csv",header=T,row.names=1)
+library(rmarkdown)
+paged_table(vst)
+```
+# Read in sample table and select tumor samples 
+```{r,message=FALSE,warning=FALSE}
+sample <- read.csv("totalRNA_sample_table.csv",header=T,row.names=1)
+sample_tu <- subset(sample,Specimen.Type.ID == "Primary Tumor")
+paged_table(sample_tu)
+vst_tu <- vst[,colnames(vst)%in%rownames(sample_tu)]
+```
+# Select BRAFV600E mutaion samples
+```{r,message=FALSE,warning=FALSE}
+sample_brafM <- sample[sample $ BRAF.RAS_Score_Driver.10Jan2020=="BRAF.MutV600E",]
+```
+# Select RAS mutation samples
+```{r,message=FALSE,warning=FALSE}
+sample_rasM <- sample[sample $ BRAF.RAS_Score_Driver.10Jan2020=="Mut.RAS",]
+```
+# Combine BRAFV600E M and RAS M samples
+```{r,message=FALSE,warning=FALSE}
+sample_brafM_rasM <- rbind(sample_brafM,sample_rasM)
+```
+# Get vst expression of TCGA genes in tumor samples 
+
+Note: ANXA2P2 is a pseudogene and it is not included in our GRCh38 gene annotation file
+```{r,message=FALSE,warning=FALSE,results='hide'}
+tcga <- read.table("tcga_71gene.txt")
+tcga_vst_tu <-vst_tu[rownames(vst_tu)%in% tcga $ V1,]
+write.csv(tcga_vst_tu,"tcgagene_vst_inTumor.csv")
+tcga_vst_braf <- tcga_vst_tu[,colnames(tcga_vst_tu)%in%rownames(sample_brafM)]
+tcga_vst_ras <- tcga_vst_tu[,colnames(tcga_vst_tu)%in%rownames(sample_rasM)]
+```
+
+# Get the centroid of BRAFV600E M and RAS M data
+```{r,message=FALSE,warning=FALSE}
+CB <- matrix(rowMeans(tcga_vst_braf),ncol=1, byrow=T)
+colnames(CB) <- c("centroid")
+rownames(CB) <- rownames(tcga_vst_braf)
+
+CR <- matrix(rowMeans(tcga_vst_ras),ncol=1, byrow=T)
+colnames(CR) <- c("centroid")
+rownames(CR) <- rownames(tcga_vst_ras)
+```
+
+# Get z-score normalized Euclidean distance
+```{r,message=FALSE,warning=FALSE}
+library(distances)
+TB <- lapply(seq(1,ncol(tcga_vst_tu),by=1),function(i){distances(rbind(t(tcga_vst_tu[,i]),t(CB)))})
+TB <- sapply(TB, function(i){i[1,2]}) 
+TB <- (TB-mean(TB))/sd(TB)
+
+TR <- lapply(seq(1,ncol(tcga_vst_tu),by=1),function(i){distances(rbind(t(tcga_vst_tu[,i]),t(CR)))})
+TR <- sapply(TR, function(i){i[1,2]}) 
+TR <- (TR-mean(TR))/sd(TR)
+```
+
+# Generate BRAFV600E – RAS score
+
+Briefly, we computed the centroids of the TCGA top Mut.BRAFV600E vs Mut.RAS DE gene signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
+BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
+where v(t) is the vector of totalRNA vst expression of the tcga top DE genes in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
+Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
+```{r,message=FALSE,warning=FALSE}
+BRS <- TB-TR
+BRS <- matrix(BRS,ncol=1, byrow=T)
+colnames(BRS) <- c("BRS")
+rownames(BRS) <- colnames(tcga_vst_tu)
+BRS <- BRS[order(rownames(BRS)),,drop=F]
+sample_tu <- sample_tu[order(rownames(sample_tu)),]
+BRS <- cbind(BRS,sample_tu[,c("FinalDriverPathway.10Jan2020","FinalDriverGroup.10Jan2020","FinalDriver.10Jan2020","TSS.Subject.ID")])
+#annotate samples with previously calculated BRS using our DE genes
+BRS2 <- read.csv("tumor_BRS_totalRNA.csv",header=T,row.names=1)
+BRS2 <- BRS2[order(rownames(BRS2)),,drop=F]
+names(BRS2) <- "BRS_chernobylDEgenes"
+BRS <- cbind(BRS,BRS2)
+write.csv(BRS,"tumor_BRS_totalRNA_using_TCGAgenes.csv")
+paged_table(BRS)
+
+```
