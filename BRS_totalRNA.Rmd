@@ -45,7 +45,7 @@ TR <- (TR-mean(TR))/sd(TR)
 
 # Generate BRAFV600E – RAS score
 
-Briefly, we computed the centroids of the top 100 DE gene signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
+Briefly, we computed the centroids of the top 100 Mut.BRAFV600E vs Mut.RAS DE gene signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
 BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
 where v(t) is the vector of totalRNA vst expression of the top 100 DE genes in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
 Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
