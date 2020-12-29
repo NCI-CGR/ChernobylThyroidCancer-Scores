@@ -1,0 +1,59 @@
+---
+title: "Estimating the degree to which the miRNA expression profiles resemble either BRAFV600Eor RAS-mutated PTC with the BRAFV600E – RAS score"
+author: "Jieqiong Dai"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+      html_document:
+        code_folding: hide
+        toc: true
+        toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load BRAFV600E Mutation VS RAS Mutation DE miRNA data
+```{r,message=FALSE,warning=FALSE}
+library(DESeq2)
+load("miRNA_BRS_DE.Rdata")
+rownames(res_fc1.5q0.05[1:min(nrow(res_fc1.5q0.05),100),])
+```
+
+# Get the centroid of BRAFV600E M and RAS M data
+```{r,message=FALSE,warning=FALSE}
+CB <- matrix(rowMeans(top100_vst_braf),ncol=1, byrow=T)
+colnames(CB) <- c("centroid")
+rownames(CB) <- rownames(top100_vst_braf)
+
+CR <- matrix(rowMeans(top100_vst_ras),ncol=1, byrow=T)
+colnames(CR) <- c("centroid")
+rownames(CR) <- rownames(top100_vst_ras)
+```
+
+# Get z-score normalized Euclidean distance
+```{r,message=FALSE,warning=FALSE}
+library(distances)
+TB <- lapply(seq(1,ncol(top100_vst_tu),by=1),function(i){distances(rbind(t(top100_vst_tu[,i]),t(CB)))})
+TB <- sapply(TB, function(i){i[1,2]}) 
+TB <- (TB-mean(TB))/sd(TB)
+
+TR <- lapply(seq(1,ncol(top100_vst_tu),by=1),function(i){distances(rbind(t(top100_vst_tu[,i]),t(CR)))})
+TR <- sapply(TR, function(i){i[1,2]}) 
+TR <- (TR-mean(TR))/sd(TR)
+```
+
+# Generate BRAFV600E – RAS score
+
+Briefly, we computed the centroids of the top Mut.BRAFV600E vs Mut.RAS DE miRNA signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
+BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
+where v(t) is the vector of miRNA vst expression of the top DE miRNAs in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
+Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
+```{r,message=FALSE,warning=FALSE}
+BRS <- TB-TR
+BRS <- matrix(BRS,ncol=1, byrow=T)
+colnames(BRS) <- c("BRS")
+rownames(BRS) <- colnames(top100_vst_tu)  
+write.csv(BRS,"tumor_BRS_miRNA.csv")
+BRS
+```
