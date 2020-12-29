@@ -17,7 +17,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Read in vst expression data for all samples  
+# Read in vst expression data of all samples  
 ```{r,message=FALSE,warning=FALSE}
 vst <- read.csv("totalRNA_vst.csv",header=T,row.names=1)
 library(rmarkdown)
