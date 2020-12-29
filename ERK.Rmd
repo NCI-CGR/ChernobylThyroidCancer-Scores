@@ -1,0 +1,98 @@
+---
+title: "Generating the ERK-activity score of 52 expressed genes responsive to MEK inhibition"
+author: "Jieqiong Dai"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+      html_document:
+        code_folding: hide
+        toc: true
+        toc_float: true
+        pandoc_args: [
+         "+RTS", "-k16g",
+         "-RTS"
+         ]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read in vst expression data of all samples
+```{r,message=FALSE,warning=FALSE}
+vst <- read.csv("totalRNA_vst.csv",header=T,row.names=1)
+library(rmarkdown)
+paged_table(vst)
+```
+
+# Read in sample table and select tumor samples
+```{r,message=FALSE,warning=FALSE}
+sample <- read.csv("totalRNA_sample_table.csv",header=T,row.names=1)
+sample_tu <- subset(sample,Specimen.Type.ID == "Primary Tumor")
+paged_table(sample_tu)
+vst_tu <- vst[,colnames(vst)%in%rownames(sample_tu)]
+```
+
+# Read in the BRS score and seperate B-like samples and R-like samples 
+```{r,message=FALSE,warning=FALSE}
+BRS <- read.csv("tumor_BRS_totalRNA.csv",header=T,row.names=1)
+B <- rownames(subset(BRS,BRS<0))
+R <- rownames(subset(BRS,BRS>0))
+```
+
+# Get the vst expression of 52 ERK-activity related genes in tumor samples 
+```{r,message=FALSE,warning=FALSE}
+genes <- read.csv("52genes.csv",header=F)
+genes_vst_tu <-vst_tu[rownames(vst_tu)%in% genes $ V1,]
+write.csv(genes_vst_tu,"52genes_vst_inTumor.csv")
+genes_vst_tu_B <- genes_vst_tu[,colnames(genes_vst_tu)%in%B]
+genes_vst_tu_R <- genes_vst_tu[,colnames(genes_vst_tu)%in%R]
+```
+
+# Generate the ERK activity score according the the method described in the TCGA analysis
+
+## Compute the mean and standard deviation of vst expression of the 52 genes in BRAFV600E-like and RAS-like tumor samples separately.
+```{r,message=FALSE,warning=FALSE}
+MB <- matrix(rowMeans(genes_vst_tu_B),ncol=1, byrow=T)
+colnames(MB) <- c("mean_in_B")
+rownames(MB) <- rownames(genes_vst_tu_B)
+library(matrixStats)
+SB <- matrix(rowSds(as.matrix(genes_vst_tu_B)),ncol=1, byrow=T)
+colnames(SB) <- c("SD_in_B")
+rownames(SB) <- rownames(genes_vst_tu_B)
+
+MR <- matrix(rowMeans(genes_vst_tu_R),ncol=1, byrow=T)
+rownames(MR) <- rownames(genes_vst_tu_R)
+colnames(MR) <- c("mean_in_R")
+SR <- matrix(rowSds(as.matrix(genes_vst_tu_R)),ncol=1, byrow=T)
+colnames(SR) <- c("SD_in_R")
+rownames(SR) <- rownames(genes_vst_tu_R)
+```
+## Compute the pooled mean and standard deviation
+```{r,message=FALSE,warning=FALSE}
+MP <- (MB* ncol(genes_vst_tu_B) + MR * ncol(genes_vst_tu_R)) / (ncol(genes_vst_tu_B) + ncol(genes_vst_tu_R))
+colnames(MP) <- c("pooled_mean")
+SP <- ( ((ncol(genes_vst_tu_B) - 1) * (SB^2) + (ncol(genes_vst_tu_R) - 1) * (SR^2)) / (ncol(genes_vst_tu_B) + ncol(genes_vst_tu_R) -2) )^(1/2)
+colnames(SP) <- c("pooled_SD")
+rownames(SP) <- rownames(genes_vst_tu)
+```
+## Compute the Z-score for each sample by subtracting the pooled mean from the vst expression and dividing by the pooled standard deviation
+```{r, message=FALSE,warning=FALSE}
+zs <- (genes_vst_tu - MP) / SP
+```
+## Generate th ERK-activity score for each sample:  the sum of the Z-scores for the genes in set A, minus the sum of Z-scores for the genes in set B
+```{r,message=FALSE,warning=FALSE}
+gene_A <- subset(genes, V2=="A")
+gene_B <- subset(genes, V2=="B")
+zs_A <- zs[rownames(zs)%in%(gene_A $ V1),]
+zs_B <- zs[rownames(zs)%in%(gene_B $ V1),]
+ERK <- colSums(zs_A)-colSums(zs_B)
+ERK <- as.data.frame(ERK)
+colnames(ERK) <- c("ERK_score")
+sample_tu <- sample_tu[order(rownames(sample_tu)),]
+ERK <- cbind(ERK,sample_tu[,c("FinalDriverPathway.10Jan2020","FinalDriverGroup.10Jan2020","FinalDriver.10Jan2020","TSS.Subject.ID","Dose.MGY","Age_exposure","Age_S")])
+ERK <- cbind(ERK,BRS)
+names(ERK)[ncol(ERK)]<- "BRS"
+write.csv(ERK,"tumor_ERK_BRS")
+paged_table(ERK)
+
+```
