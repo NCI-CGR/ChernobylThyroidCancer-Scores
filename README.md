@@ -1,6 +1,6 @@
 # Chernobyl Thyroid Cancer - Scores
 ## I. Description
-Here are the R markdown files for generating the the BRAFV600E-RAS score (BRS),the thyroid differentiation score (TDS),and the ERK-activity score.
+Here are the R markdown files for generating the BRAFV600E-RAS score (BRS),the thyroid differentiation score (TDS),and the ERK-activity score in the Chernobyl Thyroid Cancer study.
 ## II. Contents
 1) [BRS_totalRNA_DE.Rmd](https://github.com/NCI-CGR/ChernobylThyroidCancer-Scores/blob/main/BRS_totalRNA_DE.Rmd): Detection of differentially expressed genes between BRAFV600E and RAS samples (tumor-normal paired samples only) using DESeq2 
 2) [BRS_totalRNA.Rmd](https://github.com/NCI-CGR/ChernobylThyroidCancer-Scores/blob/main/BRS_totalRNA.Rmd): Estimating the degree to which the gene expression profiles resemble either BRAFV600Eor RAS-mutated PTC with the BRAFV600E – RAS score 
