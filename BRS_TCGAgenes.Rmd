@@ -53,7 +53,13 @@ tcga_vst_braf <- tcga_vst_tu[,colnames(tcga_vst_tu)%in%rownames(sample_brafM)]
 tcga_vst_ras <- tcga_vst_tu[,colnames(tcga_vst_tu)%in%rownames(sample_rasM)]
 ```
 
-# Get the centroid of BRAFV600E M and RAS M data
+# Generate BRAFV600E – RAS score according to the method described in the TCGA analysis
+
+Briefly, we computed the centroids of the TCGA top Mut.BRAFV600E vs Mut.RAS DE gene signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
+BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
+where v(t) is the vector of totalRNA vst expression of the tcga top DE genes in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
+Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
+## Get the centroid of BRAFV600E M and RAS M data
 ```{r,message=FALSE,warning=FALSE}
 CB <- matrix(rowMeans(tcga_vst_braf),ncol=1, byrow=T)
 colnames(CB) <- c("centroid")
@@ -63,8 +69,7 @@ CR <- matrix(rowMeans(tcga_vst_ras),ncol=1, byrow=T)
 colnames(CR) <- c("centroid")
 rownames(CR) <- rownames(tcga_vst_ras)
 ```
-
-# Get z-score normalized Euclidean distance
+## Get z-score normalized Euclidean distance
 ```{r,message=FALSE,warning=FALSE}
 library(distances)
 TB <- lapply(seq(1,ncol(tcga_vst_tu),by=1),function(i){distances(rbind(t(tcga_vst_tu[,i]),t(CB)))})
@@ -75,13 +80,7 @@ TR <- lapply(seq(1,ncol(tcga_vst_tu),by=1),function(i){distances(rbind(t(tcga_vs
 TR <- sapply(TR, function(i){i[1,2]}) 
 TR <- (TR-mean(TR))/sd(TR)
 ```
-
-# Generate BRAFV600E – RAS score according to the method described in the TCGA analysis
-
-Briefly, we computed the centroids of the TCGA top Mut.BRAFV600E vs Mut.RAS DE gene signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
-BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
-where v(t) is the vector of totalRNA vst expression of the tcga top DE genes in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
-Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
+## Generate BRAFV600E – RAS score
 ```{r,message=FALSE,warning=FALSE}
 BRS <- TB-TR
 BRS <- matrix(BRS,ncol=1, byrow=T)
@@ -90,7 +89,7 @@ rownames(BRS) <- colnames(tcga_vst_tu)
 BRS <- BRS[order(rownames(BRS)),,drop=F]
 sample_tu <- sample_tu[order(rownames(sample_tu)),]
 BRS <- cbind(BRS,sample_tu[,c("FinalDriverPathway.10Jan2020","FinalDriverGroup.10Jan2020","FinalDriver.10Jan2020","TSS.Subject.ID")])
-#annotate samples with previously calculated BRS using our DE genes
+#annotate samples with previously calculated BRS using Chernobyl DE genes
 BRS2 <- read.csv("tumor_BRS_totalRNA.csv",header=T,row.names=1)
 BRS2 <- BRS2[order(rownames(BRS2)),,drop=F]
 names(BRS2) <- "BRS_chernobylDEgenes"
