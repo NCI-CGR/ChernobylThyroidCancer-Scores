@@ -59,6 +59,7 @@ Briefly, we computed the centroids of the TCGA top Mut.BRAFV600E vs Mut.RAS DE g
 BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
 where v(t) is the vector of totalRNA vst expression of the tcga top DE genes in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
 Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
+
 ## Get the centroid of BRAFV600E M and RAS M data
 ```{r,message=FALSE,warning=FALSE}
 CB <- matrix(rowMeans(tcga_vst_braf),ncol=1, byrow=T)
