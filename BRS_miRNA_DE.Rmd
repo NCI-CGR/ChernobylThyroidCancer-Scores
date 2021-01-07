@@ -13,7 +13,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Reads in microRNA reads count data
+# Read in microRNA reads count data
 ```{r,message=FALSE,warning=FALSE}
 library(DESeq2)
 rna <- read.csv("miRNA_reads_count_ready.csv",header=T,row.names=1)
