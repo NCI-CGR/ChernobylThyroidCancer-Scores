@@ -13,7 +13,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Reads in total RNA reads count data
+# Read in total RNA reads count data
 ```{r,message=FALSE,warning=FALSE}
 library(DESeq2)
 rna <- read.csv("totalRNA_reads_count_ready.csv",header=T,row.names=1)
@@ -140,7 +140,7 @@ plotPCA(vst2, intgroup=c("Specimen.Type.ID","driver_group.1")) + ggtitle("totalR
 
 plot_ly(plotPCA(vst2, intgroup=c("Specimen.Type.ID","driver_group.1"),returnData=T),x= ~ PC1, y =  ~ PC2, text= ~ name, color = ~ driver_group.1)
 ```
-# Box plot of the Cook’s distances, is an approach to count outliers by checking if one sample is consistently higher than others. For every gene and for every sample, a diagnostic test for outliers called Cook’s distance. Cook’s distance is a measure of how much a single sample is influencing the fitted coefficients for a gene, and a large value of Cook’s distance is intended to indicate an outlier count.
+## Box plot of the Cook’s distances, is an approach to count outliers by checking if one sample is consistently higher than others. For every gene and for every sample, a diagnostic test for outliers called Cook’s distance. Cook’s distance is a measure of how much a single sample is influencing the fitted coefficients for a gene, and a large value of Cook’s distance is intended to indicate an outlier count.
 Note: in large sample set, sample names may not be properly labeled.
 ```{r, message=FALSE,warning=FALSE}
 par(mar = c(8, 5, 2, 2))
