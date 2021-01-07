@@ -20,7 +20,13 @@ load("totalRNA_BRS_DE.Rdata")
 rownames(res_fc2q0.01[1:min(nrow(res_fc2q0.01),100),])
 ```
 
-# Get the centroid of BRAFV600E M and RAS M data
+# Generate BRAFV600E – RAS score according to the method described in the TCGA analysis
+
+Briefly, we computed the centroids of the top 100 Mut.BRAFV600E vs Mut.RAS DE gene signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
+BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
+where v(t) is the vector of totalRNA vst expression of the top 100 DE genes in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
+Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
+## Get the centroid of BRAFV600E M and RAS M data
 ```{r,message=FALSE,warning=FALSE}
 CB <- matrix(rowMeans(top100_vst_braf),ncol=1, byrow=T)
 colnames(CB) <- c("centroid")
@@ -30,8 +36,7 @@ CR <- matrix(rowMeans(top100_vst_ras),ncol=1, byrow=T)
 colnames(CR) <- c("centroid")
 rownames(CR) <- rownames(top100_vst_ras)
 ```
-
-# Get z-score normalized Euclidean distance
+## Get z-score normalized Euclidean distance
 ```{r,message=FALSE,warning=FALSE}
 library(distances)
 TB <- lapply(seq(1,ncol(top100_vst_tu),by=1),function(i){distances(rbind(t(top100_vst_tu[,i]),t(CB)))})
@@ -42,13 +47,7 @@ TR <- lapply(seq(1,ncol(top100_vst_tu),by=1),function(i){distances(rbind(t(top10
 TR <- sapply(TR, function(i){i[1,2]}) 
 TR <- (TR-mean(TR))/sd(TR)
 ```
-
-# Generate BRAFV600E – RAS score according to the method described in the TCGA analysis
-
-Briefly, we computed the centroids of the top 100 Mut.BRAFV600E vs Mut.RAS DE gene signature in B, c(B), and R, c(R), and for each tumor t we defined the BRAFV600E-RAS score (BRS) of t as the difference between the distance of t from c(B) and c(R):
-BRS(t) = |v(t)-c(B)|2 - |v(t)-c(R)|2
-where v(t) is the vector of totalRNA vst expression of the top 100 DE genes in t, and the distance |x-y|2 is the normalized Euclidean distance between the expression vectors.
-Tumors with negative BRS (closer to B than to R) were defined BRAFV600E-like, while tumors with positive BRS (closer to R than to B) were defined RAS-like.
+## Generate BRAFV600E – RAS score 
 ```{r,message=FALSE,warning=FALSE}
 BRS <- TB-TR
 BRS <- matrix(BRS,ncol=1, byrow=T)
