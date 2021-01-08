@@ -10,7 +10,7 @@ Here are the R markdown files for generating the BRAFV600E-RAS score (BRS),the t
 6) [BRS_meth.Rmd](https://github.com/NCI-CGR/ChernobylThyroidCancer-Scores/blob/main/BRS_meth.Rmd): Estimating the degree to which the methylation profiles resemble either BRAFV600Eor RAS-mutated PTC with the BRAFV600E – RAS score 
 7) [TDS.Rmd](https://github.com/NCI-CGR/ChernobylThyroidCancer-Scores/blob/main/TDS.Rmd): Generating the thyroid differentiation score (TDS), based on expression of 16 thyroid metabolism andfunction genes
 8) [ERK.Rmd](https://github.com/NCI-CGR/ChernobylThyroidCancer-Scores/blob/main/ERK.Rmd): Generating the ERK-activity score of 52 expressed genes responsive to MEK inhibition
-### III. Required R packages
+## III. Required R packages
 * [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)
 * [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html)
 * [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html)
@@ -21,3 +21,5 @@ Here are the R markdown files for generating the BRAFV600E-RAS score (BRS),the t
 * [rmarkdown](https://cran.r-project.org/web/packages/rmarkdown/index.html)
 * [data.table](https://cran.r-project.org/web/packages/data.table/index.html)
 * [matrixStats](https://cran.rstudio.com/web/packages/matrixStats/index.html)
+## Reference
+* Cancer Genome Atlas Research Network. Integrated genomic characterization of papillary thyroid carcinoma. Cell. 2014 Oct 23;159(3):676-90. doi: 10.1016/j.cell.2014.09.050. PMID: 25417114; PMCID: PMC4243044.
